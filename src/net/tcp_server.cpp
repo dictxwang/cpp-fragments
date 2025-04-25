@@ -104,6 +104,14 @@ int main(int argc, char const *argv[])
 
         std::cout << "Client connected" << std::endl;
 
+        // Set read timeout
+        timeval timeout;
+        timeout.tv_sec = 30;  // Timeout in seconds
+        timeout.tv_usec = 0; // Timeout in microseconds
+        if (setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+            perror("Set timeout failed");
+        }
+
         // print client info
         char client_ip[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
