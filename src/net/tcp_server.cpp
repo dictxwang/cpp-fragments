@@ -16,16 +16,11 @@ void handle_client(int client_socket) {
         std::lock_guard<std::mutex> lock(cout_mutex);
         std::cout << "Client connected. Socket: " << client_socket << std::endl;
     }
-    std::cout<< "aaaa" << std::endl;
-    char buffer[1024] = {0};
-    /**
+    char buffer[1024];
     while (true) {
         try {
-            // memset(buffer, 0, sizeof(buffer)-1);
-            // buffer[1023] = '\0';
-            std::cout<< "xxxx" << std::endl;
+            memset(buffer, 0, sizeof(buffer));
             int bytes_received = read(client_socket, buffer, sizeof(buffer));
-            std::cout<< "yyyy" << std::endl;
             if (bytes_received <= 0) {
                 // Client disconnected or error occurred
                 std::lock_guard<std::mutex> lock(cout_mutex);
@@ -37,23 +32,18 @@ void handle_client(int client_socket) {
                 std::lock_guard<std::mutex> lock(cout_mutex);
                 std::cout << "Received from client [" << client_socket << "]: " << buffer << std::endl;
             }
-            const char* message = "Hello, Client!";
+            const char* message = "Hello, Client!\n";
             write(client_socket, message, strlen(message)); // Echo back
         } catch (const std::exception& e) {
             std::cerr << "Caught exception: " << e.what() << std::endl;
         }
     }
-    */
 
     while (true) {
         std::cout << "Keep Connection..." << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(3));
     }
     close(client_socket);
-}
-
-void test_handle(int flag) {
-    std::cout << "<<< Test Handle: " << flag << std::endl;
 }
 
 int main(int argc, char const *argv[])
@@ -124,9 +114,11 @@ int main(int argc, char const *argv[])
             std::cout << "New connection from " << client_ip << ":" << ntohs(client_addr.sin_port) << std::endl;
         }
 
-        std::thread(test_handle, 1); // Test handle in a separate thread
+        // detach() will not block the main thread
+        std::thread(handle_client, client_socket).detach(); // Detach the thread to handle client connection
+        
+        // join() will block the main thread until the client thread is finished
         // std::thread thread_client(handle_client, client_socket); // Handle client in a separate thread
-
         // thread_client.join();
     }
     
