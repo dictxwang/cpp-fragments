@@ -1,6 +1,7 @@
 #include <iostream>
 #include <thread>
 #include <cstring>
+#include <chrono>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -10,19 +11,20 @@
 std::mutex cout_mutex; // Mutex to synchronize console output
 
 void handle_client(int client_socket) {
-    // {
-    //     // Use mutex to safely print to console
-    //     std::lock_guard<std::mutex> lock(cout_mutex);
-    //     std::cout << "Client connected. Socket: " << client_socket << std::endl;
-    // }
+    {
+        // Use mutex to safely print to console
+        std::lock_guard<std::mutex> lock(cout_mutex);
+        std::cout << "Client connected. Socket: " << client_socket << std::endl;
+    }
     std::cout<< "aaaa" << std::endl;
     char buffer[1024] = {0};
+    /**
     while (true) {
         try {
             // memset(buffer, 0, sizeof(buffer)-1);
             // buffer[1023] = '\0';
             std::cout<< "xxxx" << std::endl;
-            ssize_t bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
+            int bytes_received = read(client_socket, buffer, sizeof(buffer));
             std::cout<< "yyyy" << std::endl;
             if (bytes_received <= 0) {
                 // Client disconnected or error occurred
@@ -30,15 +32,22 @@ void handle_client(int client_socket) {
                 std::cout << "Client disconnected. Socket: " << client_socket << std::endl;
                 break;
             }
-            
+
             {
                 std::lock_guard<std::mutex> lock(cout_mutex);
                 std::cout << "Received from client [" << client_socket << "]: " << buffer << std::endl;
             }
-            send(client_socket, buffer, bytes_received, 0); // Echo back
+            const char* message = "Hello, Client!";
+            write(client_socket, message, strlen(message)); // Echo back
         } catch (const std::exception& e) {
             std::cerr << "Caught exception: " << e.what() << std::endl;
         }
+    }
+    */
+
+    while (true) {
+        std::cout << "Keep Connection..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
     close(client_socket);
 }
@@ -98,6 +107,11 @@ int main(int argc, char const *argv[])
         std::thread(handle_client, client_socket); // Handle client in a separate thread
     }
     
+
+    while(true) {
+        std::cout << "Keep Running..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+    }
 
     return 0;
 }
