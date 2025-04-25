@@ -52,6 +52,10 @@ void handle_client(int client_socket) {
     close(client_socket);
 }
 
+void test_handle(int flag) {
+    std::cout << "<<< Test Handle: " << flag << std::endl;
+}
+
 int main(int argc, char const *argv[])
 {
     std::cout << "Arguments Count Is " << argc << std::endl;
@@ -120,7 +124,10 @@ int main(int argc, char const *argv[])
             std::cout << "New connection from " << client_ip << ":" << ntohs(client_addr.sin_port) << std::endl;
         }
 
-        std::thread(handle_client, client_socket); // Handle client in a separate thread
+        std::thread(test_handle, 1); // Test handle in a separate thread
+        // std::thread thread_client(handle_client, client_socket); // Handle client in a separate thread
+
+        // thread_client.join();
     }
     
 
