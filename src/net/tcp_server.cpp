@@ -64,6 +64,14 @@ int main(int argc, char const *argv[])
         return -1;
     }
 
+    // Set socket options for reuse
+    int opt = 1;
+    if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+        perror("Set socket options failed");
+        close(server_socket);
+        return -1;
+    }
+
     sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
