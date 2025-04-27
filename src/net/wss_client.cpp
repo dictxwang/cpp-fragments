@@ -248,8 +248,9 @@ bool read_and_process_message(SSL* ssl) {
                     // Complete message received
                     std::cout << "Received WebSocket Message: " << std::string(msg_buf.bytes(), msg_buf.length()) << std::endl;
                     msg_buf.clear();
-                } else {
-                    // Incomplete message, wait for more data
+                }
+
+                if (recv_buf.getoft() + WEBSOCKET_HEADER_MIN_SIZE >= recv_buf.length()) {
                     break;
                 }
                 ws_packet.get_payload().clear();
