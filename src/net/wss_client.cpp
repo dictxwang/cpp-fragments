@@ -7,6 +7,10 @@
 #include <unistd.h>
 #include <random>
 
+#include "util/ws/ws_packet.h"
+
+const int WEBSOCKET_HEADER_MIN_SIZE = 5;
+
 // Helper function: Create a secure TLS connection
 SSL* create_tls_connection(const std::string& host, int port, int& socket_fd) {
     // Step 1: Initialize OpenSSL
@@ -159,6 +163,107 @@ std::string create_websocket_frame(const std::string& payload) {
     return frame;
 }
 
+bool subscribe_ticker_book(SSL* ssl) {
+
+    std::string message = "{\"method\":\"SUBSCRIBE\", \"id\":1, \"params\": [\"btcusdt@bookTicker\"]}";
+    std::string frame = "\x81" + std::string(1, message.size()) + message; // Simplified frame
+    int writeLength = SSL_write(ssl, frame.c_str(), frame.size());
+    std::cout << "Sent message: " << message << std::endl;
+    if (writeLength <= 0) {
+        std::cerr << "Error: Failed to send WebSocket message." << std::endl;
+        return false;
+    }
+
+    char buffer[1024];
+    int len = SSL_read(ssl, buffer, sizeof(buffer) - 1);
+    if (len < 0) {
+        std::cerr << "Error: Failed to receive subscribe message." << std::endl;
+        return false;
+    } else {
+        buffer[len] = '\0';
+        std::cout << "Received Subscribe Message: " << buffer + 2 << std::endl;
+        return true;
+    }
+}
+
+bool read_and_process_message(SSL* ssl) {
+    
+    if (ssl == nullptr) {
+        std::cerr << "Error: SSL object is null." << std::endl;
+        return false;
+    }
+
+    ByteBuffer recv_buf;
+    ByteBuffer msg_buf;
+    
+    while (true) {
+        int total_recv_len = 0;
+        int max_buffer_size = 1024;
+        char buffer[max_buffer_size];
+        int read_len = 0;
+        int pendding_len = 0;
+        int recv_start_len = recv_buf.length();
+        do {
+            read_len = SSL_read(ssl, buffer, sizeof(buffer) - 1);
+            if (read_len > 0) {
+                recv_buf.append(buffer, read_len);
+                total_recv_len += read_len;
+            } else {
+                break;
+            }
+            pendding_len = SSL_pending(ssl);
+        } while (pendding_len > 0);
+
+        if (read_len < 0) {
+            int err = SSL_get_error(ssl, read_len);
+            ERR_clear_error();
+            if (err == SSL_ERROR_WANT_READ) {
+                // No data available, continue reading
+                continue;
+            } else if (err == SSL_ERROR_WANT_WRITE) {
+                // No data available, continue reading
+                continue;
+            } else {
+                std::cerr << "Error: Failed to read WebSocket message." << std::endl;
+                return false;
+            }
+        }
+
+        if (total_recv_len <= 0) {
+            return false;
+        }
+
+        if (recv_buf.length() > recv_start_len && recv_buf.length() > recv_buf.getoft() + WEBSOCKET_HEADER_MIN_SIZE) {
+            // parse the message
+            WebSocketPacket ws_packet;
+            while (true) {
+                uint32_t offset = ws_packet.recv_dataframe(recv_buf);
+                if (offset == 0) {
+                    // Not enough data to process, break the loop
+                    break;
+                }
+                ByteBuffer &payload = ws_packet.get_payload();
+                msg_buf.append(payload.bytes(), payload.length());
+                if (ws_packet.get_fin() == 1) {
+                    // Complete message received
+                    std::cout << "Received WebSocket Message: " << std::string(msg_buf.bytes(), msg_buf.length()) << std::endl;
+                    msg_buf.clear();
+                } else {
+                    // Incomplete message, wait for more data
+                    break;
+                }
+                ws_packet.get_payload().clear();
+            }
+
+            recv_buf.erase(recv_buf.getoft());
+            recv_buf.resetoft();
+        } else {
+            // No complete message received yet
+            continue;
+        }
+    }
+}
+
 // Main function
 int main() {
     // const std::string host = "echo.websocket.events"; // Example WSS server
@@ -183,22 +288,24 @@ int main() {
     }
 
     // Step 3: Send a WebSocket message (optional)
-    std::string message = "Hello, WSS!";
-    std::string frame = "\x81" + std::string(1, message.size()) + message; // Simplified frame
-    SSL_write(ssl, frame.c_str(), frame.size());
-    std::cout << "Sent message: " << message << std::endl;
+    // std::string message = "Hello, WSS!";
+    // std::string frame = "\x81" + std::string(1, message.size()) + message; // Simplified frame
+    // SSL_write(ssl, frame.c_str(), frame.size());
+    // std::cout << "Sent message: " << message << std::endl;
 
-    char buffer[1024];
-    int len = SSL_read(ssl, buffer, sizeof(buffer) - 1);
-    if (len < 0) {
-        std::cerr << "Error: Failed to receive WebSocket message." << std::endl;
-    } else {
-
-        buffer[len] = '\0';
-        std::cout << "Received WebSocket Message: " << buffer + 2 << std::endl;
+    // Step 3: Subscribe to a WebSocket channel
+    if (!subscribe_ticker_book(ssl)) {
+        SSL_free(ssl);
+        close(socket_fd);
+        return 1;
     }
 
-    // Step 4: Clean up
+    // Step 4: Receive WebSocket messages
+    if (!read_and_process_message(ssl)) {
+        std::cerr << "Error: Failed to read and process WebSocket messages." << std::endl;
+    }
+
+    // Step 5: Clean up
     SSL_free(ssl);
     close(socket_fd);
     return 0;
