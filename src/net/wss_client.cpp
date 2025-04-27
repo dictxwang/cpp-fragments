@@ -7,9 +7,30 @@
 #include <unistd.h>
 #include <random>
 
+#include "rapidjson/document.h"
 #include "util/ws/ws_packet.h"
 
 const int WEBSOCKET_HEADER_MIN_SIZE = 5;
+
+struct TickerInfo {
+    std::string symbol;
+    double best_bid;
+    double bid_size;
+    double best_ask;
+    double ask_size;
+    uint64_t update_id;
+};
+
+int generateRandomInt(int min, int max) {
+    // Thread-local random engine
+    thread_local std::mt19937 generator(std::random_device{}()); // Seed per thread
+
+    // Uniform integer distribution
+    std::uniform_int_distribution<int> distribution(min, max);
+
+    // Generate random number
+    return distribution(generator);
+}
 
 // Helper function: Create a secure TLS connection
 SSL* create_tls_connection(const std::string& host, int port, int& socket_fd) {
@@ -186,6 +207,75 @@ bool subscribe_ticker_book(SSL* ssl) {
     }
 }
 
+int process_one_message(SSL* ssl, WebSocketPacket& packet, ByteBuffer& msg_buf) {
+    
+    if (packet.get_opcode() == WebSocketPacket::WSOpcode_Ping) {
+        // Handle Ping
+        std::cout << "Received Ping Frame" << std::endl;
+        // Send Pong response
+        if (ssl == nullptr) {
+            std::cerr << "Error: SSL object is null." << std::endl;
+            return 1;
+        }
+        packet.set_fin(1);
+        packet.set_opcode(WebSocketPacket::WSOpcode_Pong);
+        ByteBuffer pong_buf;
+        packet.pack_dataframe(pong_buf);
+        int writeLength = SSL_write(ssl, pong_buf.bytes(), pong_buf.length());
+        if (writeLength <= 0) {
+            std::cerr << "Error: Failed to send Pong message." << std::endl;
+            return 1;
+        }
+        std::cout << "Sent Pong Frame" << std::endl;
+    } else if (packet.get_opcode() == WebSocketPacket::WSOpcode_Continue) {
+        // Handle continuation frame
+    }
+    if (packet.get_opcode() == WebSocketPacket::WSOpcode_Text) {
+
+        int rand_int = generateRandomInt(1, 1000);
+
+        // Handle text frame
+        if (rand_int < 20) {
+            std::cout << "Received Text Frame: " << std::string(msg_buf.bytes(), msg_buf.length()) << std::endl;
+        }
+
+        rapidjson::Document document;
+        document.Parse(std::string(msg_buf.bytes(), msg_buf.length()).c_str());
+        if (document.HasParseError()) {
+            std::cerr << "Error: Failed to parse JSON message." << std::endl;
+            return 1;
+        }
+        if (!document.HasMember("data")) {
+            std::cerr << "Error: JSON message does not contain 'data' field." << std::endl;
+            return 1;
+        }
+        rapidjson::Value &value = document["data"];
+        if (value.HasMember("s") && value.HasMember("b") && value.HasMember("B") &&
+            value.HasMember("a") && value.HasMember("A") && value.HasMember("u")) {
+            TickerInfo ticker_info;
+            ticker_info.symbol = value["s"].GetString();
+            ticker_info.best_bid = std::atof(value["b"].GetString());
+            ticker_info.bid_size = std::atof(value["B"].GetString());
+            ticker_info.best_ask = std::atof(value["a"].GetString());
+            ticker_info.ask_size = std::atof(value["A"].GetString());
+            ticker_info.update_id = value["u"].GetUint64();
+
+            if (rand_int < 20) {
+                std::cout << "Ticker Info: " << ticker_info.symbol << ", "
+                        << "Best Bid: " << ticker_info.best_bid << ", "
+                        << "Bid Size: " << ticker_info.bid_size << ", "
+                        << "Best Ask: " << ticker_info.best_ask << ", "
+                        << "Ask Size: " << ticker_info.ask_size << ", "
+                        << "Update Id: " << ticker_info.update_id << std::endl;
+            }
+        } else {
+            std::cerr << "Error: JSON message does not contain expected fields." << std::endl;
+        }
+    }
+
+    return 0;
+}
+
 bool read_and_process_message(SSL* ssl) {
     
     if (ssl == nullptr) {
@@ -246,11 +336,14 @@ bool read_and_process_message(SSL* ssl) {
                 msg_buf.append(payload.bytes(), payload.length());
                 if (ws_packet.get_fin() == 1) {
                     // Complete message received
-                    std::cout << "Received WebSocket Message: " << std::string(msg_buf.bytes(), msg_buf.length()) << std::endl;
+                    // std::cout << "Received WebSocket Message: " << std::string(msg_buf.bytes(), msg_buf.length()) << std::endl;
+                    // Process one complete message
+                    process_one_message(ssl, ws_packet, msg_buf);
                     msg_buf.clear();
                 }
 
                 if (recv_buf.getoft() + WEBSOCKET_HEADER_MIN_SIZE >= recv_buf.length()) {
+                    // No more data to process, break the packet parsing loop and continue reading
                     break;
                 }
                 ws_packet.get_payload().clear();
