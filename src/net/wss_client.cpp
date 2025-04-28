@@ -34,7 +34,7 @@ int generateRandomInt(int min, int max) {
 }
 
 // Helper function: Create a secure TLS connection
-SSL* create_tls_connection(const std::string& host, int port, int& socket_fd, const char* local_ip) {
+SSL* create_tls_connection(const std::string& host, int port, int& socket_fd, const char* remote_ip, const char* local_ip) {
     // Step 1: Initialize OpenSSL
     SSL_library_init();
     SSL_load_error_strings();
@@ -63,9 +63,9 @@ SSL* create_tls_connection(const std::string& host, int port, int& socket_fd, co
     if (local_ip != nullptr) {
         struct sockaddr_in local_addr{};
 
-        std::memset(&local_addr, 0, sizeof(local_addr));
+        // std::memset(&local_addr, 0, sizeof(local_addr)); // Clear the structure, setting all fields to zero
         local_addr.sin_family = AF_INET;
-        local_addr.sin_port = htons(0);  // 系统自动分配可用端口
+        local_addr.sin_port = htons(0); // Use any available port
         local_addr.sin_addr.s_addr = inet_addr(local_ip);
         if (bind(socket_fd, (struct sockaddr*)&local_addr, sizeof(local_addr)) == -1) {
             std::cerr << "Error: Failed to bind local IP." << std::endl;
@@ -78,7 +78,13 @@ SSL* create_tls_connection(const std::string& host, int port, int& socket_fd, co
     struct sockaddr_in server_addr{};
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
-    std::memcpy(&server_addr.sin_addr.s_addr, server->h_addr, server->h_length);
+    if (remote_ip != nullptr && strlen(remote_ip) > 0) {
+        // Use the provided remote IP address
+        server_addr.sin_addr.s_addr = inet_addr(remote_ip);
+    } else {
+        // Use the resolved server address
+        std::memcpy(&server_addr.sin_addr.s_addr, server->h_addr, server->h_length);
+    }
 
     if (connect(socket_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
         std::cerr << "Error: Failed to connect to server." << std::endl;
@@ -382,11 +388,12 @@ int main() {
     const std::string host = "stream.binance.com";
     const int port = 9443;
     const std::string path = "/stream";
-    const std::string local_ip; // Optional: Set to your local IP address if needed
+    const std::string remote_ip = "3.112.117.223"; // Optional: Set to your remote IP address if needed
+    const std::string local_ip = "172.31.2.173"; // Optional: Set to your local IP address if needed
 
     // Step 1: Create a secure TLS connection
     int socket_fd = 0;
-    SSL* ssl = create_tls_connection(host, port, socket_fd, local_ip.c_str());
+    SSL* ssl = create_tls_connection(host, port, socket_fd, remote_ip.c_str(), local_ip.c_str());
     if (!ssl) {
         return 1;
     }
