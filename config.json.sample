@@ -2,6 +2,6 @@
     "binance_ticker_ws_ip": "57.180.82.55",
     "binance_ticker_local_ip": "172.31.2.173",
 
-    "binance_reset_remote_ip": "",
-    "binance_reset_local_ip": ""
+    "binance_reset_remote_ip": "3.168.246.167",
+    "binance_reset_local_ip": "172.31.2.160"
 }
