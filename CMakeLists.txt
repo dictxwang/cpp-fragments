@@ -56,6 +56,9 @@ target_link_libraries(${PROCESS_WSS_CLIENT}
 )
 
 add_executable(${PROCESS_HTTPS_CLIENT} "src/net/https_client.cpp")
+# Include CURL headers
+target_include_directories(${PROCESS_HTTPS_CLIENT} PRIVATE ${CURL_INCLUDE_DIR})
+target_include_directories(${PROCESS_HTTPS_CLIENT} PRIVATE ${OPENSSL_INCLUDE_DIR})
 target_link_libraries(${PROCESS_HTTPS_CLIENT}
     PRIVATE OpenSSL::SSL OpenSSL::Crypto
     PRIVATE CURL::libcurl
