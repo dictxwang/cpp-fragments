@@ -59,4 +59,5 @@ add_executable(${PROCESS_HTTPS_CLIENT} "src/net/https_client.cpp")
 target_link_libraries(${PROCESS_HTTPS_CLIENT}
     PRIVATE OpenSSL::SSL OpenSSL::Crypto
     PRIVATE CURL::libcurl
+    config
 )
