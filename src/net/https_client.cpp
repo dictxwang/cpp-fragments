@@ -48,9 +48,9 @@ int main(int argc, char** argv) {
             curl_easy_setopt(curl, CURLOPT_INTERFACE, localIP.c_str());
         }
 
+        struct curl_slist* resolve_list = nullptr;
         if (!remoteIP.empty()) {
             // curl_easy_setopt(curl, CURLOPT_CONNECT_TO, (host + ":" + port + "::" + remoteIP).c_str());
-            struct curl_slist* resolve_list = nullptr;
             std::string resolve_entry = host + ":" + port + ":" + remoteIP;
             resolve_list = curl_slist_append(resolve_list, resolve_entry.c_str());
             curl_easy_setopt(curl, CURLOPT_RESOLVE, resolve_list);
@@ -77,7 +77,9 @@ int main(int argc, char** argv) {
         }
 
         // Cleanup
-        // curl_slist_free_all(resolve_list);
+        if (resolve_list != nullptr) {
+            curl_slist_free_all(resolve_list);
+        }
         curl_easy_cleanup(curl);
     }
 
