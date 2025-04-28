@@ -10,6 +10,7 @@
 
 #include "rapidjson/document.h"
 #include "util/ws/ws_packet.h"
+#include "config/config.h"
 
 const int WEBSOCKET_HEADER_MIN_SIZE = 5;
 
@@ -380,15 +381,27 @@ bool read_and_process_message(SSL* ssl) {
 }
 
 // Main function
-int main() {
+int main(int argc, char **argv) {
+
+    if (argc < 2) {
+        std::cout << "Usage: " << argv[0] << " config_file" << std::endl;
+        return 0;
+    }
+
+    Config config;
+    if (!config.LoadConfig(argv[1])) {
+        std::cerr << "Load config error : " << argv[1] << std::endl;
+        return 1;
+    }
+
     // const std::string host = "echo.websocket.events"; // Example WSS server
     // const int port = 443;                             // WSS port
     // const std::string path = "/";
     const std::string host = "stream.binance.com";
     const int port = 9443;
     const std::string path = "/stream";
-    const std::string remote_ip = "57.180.82.55"; // Optional: Set to your remote IP address if needed
-    const std::string local_ip = "172.31.2.153"; // Optional: Set to your local IP address if needed
+    const std::string remote_ip = config.binance_ticker_ws_ip; // Optional: Set to your remote IP address if needed
+    const std::string local_ip = config.binance_ticker_local_ip; // Optional: Set to your local IP address if needed
 
     // Step 1: Create a secure TLS connection
     int socket_fd = 0;

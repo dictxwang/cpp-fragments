@@ -27,6 +27,11 @@ FILE(GLOB_RECURSE LIB_UTIL_SRC RELATIVE ${CMAKE_SOURCE_DIR}
     "src/util/*")
 add_library(util ${LIB_UTIL_SRC})
 
+# config
+FILE(GLOB_RECURSE LIB_UTIL_SRC RELATIVE ${CMAKE_SOURCE_DIR}
+    "src/config/*")
+add_library(config ${LIB_UTIL_SRC})
+
 add_executable(${PROCESS_MAIN} "src/main.cpp")
 
 add_executable(${PROCESS_TCP_SERVER} "src/net/tcp_server.cpp")
@@ -44,4 +49,5 @@ target_include_directories(${PROCESS_WSS_CLIENT} PRIVATE ${OPENSSL_INCLUDE_DIR})
 target_link_libraries(${PROCESS_WSS_CLIENT}
     PRIVATE OpenSSL::SSL OpenSSL::Crypto
     util
+    config
 )
