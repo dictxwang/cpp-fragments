@@ -5,6 +5,7 @@ set(PROCESS_MAIN "process_main")
 set(PROCESS_TCP_SERVER "process_tcp_server")
 set(PROCESS_WS_CLIENT "process_ws_client")
 set(PROCESS_WSS_CLIENT "process_wss_client")
+set(PROCESS_HTTPS_CLIENT "process_https_client")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
@@ -21,6 +22,8 @@ include_directories(
 
 # Find OpenSSL
 find_package(OpenSSL REQUIRED)
+# Find Curl
+find_package(CURL REQUIRED)
 
 # util
 FILE(GLOB_RECURSE LIB_UTIL_SRC RELATIVE ${CMAKE_SOURCE_DIR}
@@ -50,4 +53,10 @@ target_link_libraries(${PROCESS_WSS_CLIENT}
     PRIVATE OpenSSL::SSL OpenSSL::Crypto
     util
     config
+)
+
+add_executable(${PROCESS_HTTPS_CLIENT} "src/net/https_client.cpp")
+target_link_libraries(${PROCESS_HTTPS_CLIENT}
+    PRIVATE OpenSSL::SSL OpenSSL::Crypto
+    PRIVATE CURL::libcurl
 )

@@ -32,6 +32,8 @@ bool Config::LoadConfig(const char* inputfile) {
 
     this->binance_ticker_local_ip = doc_["binance_ticker_local_ip"].GetString();
     this->binance_ticker_ws_ip = doc_["binance_ticker_ws_ip"].GetString();
+    this->binance_reset_remote_ip = doc_["binance_reset_remote_ip"].GetString();
+    this->binance_reset_local_ip = doc_["binance_reset_local_ip"].GetString();
 
     return true;
 }

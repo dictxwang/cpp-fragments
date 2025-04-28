@@ -16,6 +16,8 @@ public:
 public:
     string binance_ticker_ws_ip;
     string binance_ticker_local_ip;
+    string binance_reset_remote_ip;
+    string binance_reset_local_ip;
 
 private:
     rapidjson::Document doc_;
