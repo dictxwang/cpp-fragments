@@ -6,6 +6,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <random>
+#include <arpa/inet.h>
 
 #include "rapidjson/document.h"
 #include "util/ws/ws_packet.h"
@@ -33,7 +34,7 @@ int generateRandomInt(int min, int max) {
 }
 
 // Helper function: Create a secure TLS connection
-SSL* create_tls_connection(const std::string& host, int port, int& socket_fd) {
+SSL* create_tls_connection(const std::string& host, int port, int& socket_fd, const char* local_ip) {
     // Step 1: Initialize OpenSSL
     SSL_library_init();
     SSL_load_error_strings();
@@ -58,7 +59,22 @@ SSL* create_tls_connection(const std::string& host, int port, int& socket_fd) {
         return nullptr;
     }
 
-    // Step 4: Connect to the server
+    // Step 4: Set the local IP address (optional)
+    if (local_ip != nullptr) {
+        struct sockaddr_in local_addr{};
+
+        std::memset(&local_addr, 0, sizeof(local_addr));
+        local_addr.sin_family = AF_INET;
+        local_addr.sin_port = htons(0);  // 系统自动分配可用端口
+        local_addr.sin_addr.s_addr = inet_addr(local_ip);
+        if (bind(socket_fd, (struct sockaddr*)&local_addr, sizeof(local_addr)) == -1) {
+            std::cerr << "Error: Failed to bind local IP." << std::endl;
+            close(socket_fd);
+            return nullptr;
+        }
+    }
+
+    // Step 5: Connect to the server
     struct sockaddr_in server_addr{};
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
@@ -70,11 +86,11 @@ SSL* create_tls_connection(const std::string& host, int port, int& socket_fd) {
         return nullptr;
     }
 
-    // Step 5: Create an SSL object and attach it to the socket
+    // Step 6: Create an SSL object and attach it to the socket
     SSL* ssl = SSL_new(ctx);
     SSL_set_fd(ssl, socket_fd);
 
-    // Step 6: Perform the TLS handshake
+    // Step 7: Perform the TLS handshake
     if (SSL_connect(ssl) <= 0) {
         std::cerr << "Error: TLS handshake failed." << std::endl;
         ERR_print_errors_fp(stderr);
@@ -366,10 +382,11 @@ int main() {
     const std::string host = "stream.binance.com";
     const int port = 9443;
     const std::string path = "/stream";
+    const std::string local_ip; // Optional: Set to your local IP address if needed
 
     // Step 1: Create a secure TLS connection
     int socket_fd = 0;
-    SSL* ssl = create_tls_connection(host, port, socket_fd);
+    SSL* ssl = create_tls_connection(host, port, socket_fd, local_ip.c_str());
     if (!ssl) {
         return 1;
     }
