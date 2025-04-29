@@ -21,14 +21,33 @@ include_directories(
     3rdparty/spdlog/include
 )
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(CUSTOM_LIB_DIR "/usr/lib/x86_64-linux-gnu/")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(CUSTOM_LIB_DIR "/usr/local/lib/")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(CUSTOM_LIB_DIR "/usr/local/lib/")
+else()
+    message(WARNING "Unknown platform: ${CMAKE_SYSTEM_NAME}")
+endif()
+
 # Find OpenSSL
 find_package(OpenSSL REQUIRED)
 # Find Curl
 find_package(CURL REQUIRED)
 # Find Event
-#find_package(LIBEVENT REQUIRED)
+# find_package(LIBEVENT REQUIRED)
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBEVENT REQUIRED LIBEVENT)
+pkg_check_modules(LIBEVENT REQUIRED libevent)
+
+if("${LIBEVENT_LIBRARY}" STREQUAL "")
+    # set(LIBEVENT_INCLUDE_DIR "/custom/path/to/libevent/include")
+    set(LIBEVENT_LIBRARY "${CUSTOM_LIB_DIR}libevent.a")
+endif()
+
+# For print variables
+# message(STATUS ">>>>> LIBEVENT_INCLUDE_DIRS = ${LIBEVENT_INCLUDE_DIRS}")
+# message(STATUS ">>>>> LIBEVENT_LIBRARY = ${LIBEVENT_LIBRARY}")
 
 # util
 FILE(GLOB_RECURSE LIB_UTIL_SRC RELATIVE ${CMAKE_SOURCE_DIR}
@@ -72,5 +91,4 @@ target_link_libraries(${PROCESS_HTTPS_CLIENT}
 
 add_executable(${PROCESS_EVENT_BASE} "src/event/event_base.cpp")
 target_include_directories(${PROCESS_EVENT_BASE} PRIVATE ${LIBEVENT_INCLUDE_DIRS})
-target_link_libraries(${PROCESS_EVENT_BASE} PRIVATE ${LIBEVENT_INCLUDE_DIR})
-# target_compile_options(${PROCESS_EVENT_BASE} PRIVATE ${LIBEVENT_CFLAGS_OTHER})
+target_link_libraries(${PROCESS_EVENT_BASE} PRIVATE ${LIBEVENT_LIBRARY})

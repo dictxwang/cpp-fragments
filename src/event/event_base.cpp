@@ -1,5 +1,6 @@
 #include <iostream>
 #include <event.h>
+#include <signal.h>
 
 // Signal handler callback
 void signal_cb(evutil_socket_t sig, short events, void *user_data) {
