@@ -14,11 +14,11 @@ queue<int> buffer;
 
 void producer(int id) {
     for (int i = 0; i < 5; ++i) {
-        unique_lock<mutex> lock(mtx);
+        unique_lock<mutex> lock(mtx); // will automatically unlock when going out of scope
         buffer.push(i);
         cout << ">>> Producer " << id << " produced: " << i << endl;
         cv.notify_one();
-        lock.unlock();
+        lock.unlock(); // explicitly unlock the mutex
         this_thread::sleep_for(chrono::milliseconds(100));
     }
 }
