@@ -6,6 +6,7 @@ set(PROCESS_TCP_SERVER "process_tcp_server")
 set(PROCESS_WS_CLIENT "process_ws_client")
 set(PROCESS_WSS_CLIENT "process_wss_client")
 set(PROCESS_HTTPS_CLIENT "process_https_client")
+set(PROCESS_EVENT_BASE "process_event_base")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
@@ -24,6 +25,10 @@ include_directories(
 find_package(OpenSSL REQUIRED)
 # Find Curl
 find_package(CURL REQUIRED)
+# Find Event
+#find_package(LIBEVENT REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBEVENT REQUIRED LIBEVENT)
 
 # util
 FILE(GLOB_RECURSE LIB_UTIL_SRC RELATIVE ${CMAKE_SOURCE_DIR}
@@ -64,3 +69,8 @@ target_link_libraries(${PROCESS_HTTPS_CLIENT}
     PRIVATE CURL::libcurl
     config
 )
+
+add_executable(${PROCESS_EVENT_BASE} "src/event/event_base.cpp")
+target_include_directories(${PROCESS_EVENT_BASE} PRIVATE ${LIBEVENT_INCLUDE_DIRS})
+target_link_libraries(${PROCESS_EVENT_BASE} PRIVATE ${LIBEVENT_INCLUDE_DIR})
+# target_compile_options(${PROCESS_EVENT_BASE} PRIVATE ${LIBEVENT_CFLAGS_OTHER})
