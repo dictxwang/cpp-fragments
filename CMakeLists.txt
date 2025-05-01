@@ -55,9 +55,9 @@ FILE(GLOB_RECURSE LIB_UTIL_SRC RELATIVE ${CMAKE_SOURCE_DIR}
 add_library(util ${LIB_UTIL_SRC})
 
 # config
-FILE(GLOB_RECURSE LIB_UTIL_SRC RELATIVE ${CMAKE_SOURCE_DIR}
+FILE(GLOB_RECURSE LIB_CONFIG_SRC RELATIVE ${CMAKE_SOURCE_DIR}
     "src/config/*")
-add_library(config ${LIB_UTIL_SRC})
+add_library(config ${LIB_CONFIG_SRC})
 
 add_executable(${PROCESS_MAIN} "src/main.cpp")
 
