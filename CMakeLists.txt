@@ -7,11 +7,26 @@ set(PROCESS_WS_CLIENT "process_ws_client")
 set(PROCESS_WSS_CLIENT "process_wss_client")
 set(PROCESS_HTTPS_CLIENT "process_https_client")
 set(PROCESS_EVENT_BASE "process_event_base")
+set(PROCESS_ED25519_SODIUM "process_ed25519_sodium")
+set(PROCESS_ED25519_OPENSSL "process_ed25519_openssl")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
 # set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_BUILD_TYPE "Debug")
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(CUSTOM_LIB_DIR "/usr/lib/x86_64-linux-gnu")
+    set(CUSTOM_INCLUDE_DIR "/usr/lib/x86_64-linux-gnu")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(CUSTOM_LIB_DIR "/usr/local/lib")
+    set(CUSTOM_INCLUDE_DIR "/usr/local/include")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(CUSTOM_LIB_DIR "/usr/local/lib")
+    set(CUSTOM_INCLUDE_DIR "/usr/local/include")
+else()
+    message(WARNING "Unknown platform: ${CMAKE_SYSTEM_NAME}")
+endif()
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19,22 +34,20 @@ include_directories(
     src
     3rdparty/rapidjson/include
     3rdparty/spdlog/include
+    ${CUSTOM_INCLUDE_DIR}
 )
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set(CUSTOM_LIB_DIR "/usr/lib/x86_64-linux-gnu/")
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    set(CUSTOM_LIB_DIR "/usr/local/lib/")
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    set(CUSTOM_LIB_DIR "/usr/local/lib/")
-else()
-    message(WARNING "Unknown platform: ${CMAKE_SYSTEM_NAME}")
-endif()
+link_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CUSTOM_LIB_DIR}
+)
 
 # Find OpenSSL
 find_package(OpenSSL REQUIRED)
 # Find Curl
 find_package(CURL REQUIRED)
+# Find Sodium
+# find_package(Sodium REQUIRED)
 # Find Event
 # find_package(LIBEVENT REQUIRED)
 find_package(PkgConfig REQUIRED)
@@ -42,7 +55,7 @@ pkg_check_modules(LIBEVENT REQUIRED libevent)
 
 if("${LIBEVENT_LIBRARY}" STREQUAL "")
     # set(LIBEVENT_INCLUDE_DIR "/custom/path/to/libevent/include")
-    set(LIBEVENT_LIBRARY "${CUSTOM_LIB_DIR}libevent.a")
+    set(LIBEVENT_LIBRARY "${CUSTOM_LIB_DIR}/libevent.a")
 endif()
 
 # For print variables
@@ -92,3 +105,13 @@ target_link_libraries(${PROCESS_HTTPS_CLIENT}
 add_executable(${PROCESS_EVENT_BASE} "src/event/event_base.cpp")
 target_include_directories(${PROCESS_EVENT_BASE} PRIVATE ${LIBEVENT_INCLUDE_DIRS})
 target_link_libraries(${PROCESS_EVENT_BASE} PRIVATE ${LIBEVENT_LIBRARY})
+
+add_executable(${PROCESS_ED25519_SODIUM} "src/encrypt/ed25519_sodium.cpp")
+target_link_libraries(${PROCESS_ED25519_SODIUM}
+    PRIVATE Sodium
+)
+
+add_executable(${PROCESS_ED25519_OPENSSL} "src/encrypt/ed25519_openssl.cpp")
+target_link_libraries(${PROCESS_ED25519_OPENSSL}
+    PRIVATE OpenSSL::SSL OpenSSL::Crypto
+)

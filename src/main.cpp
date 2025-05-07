@@ -85,6 +85,36 @@ int main() {
 
     cout << "\nMain Process Start" << endl;
 
+
+    string dv = "922327.00000000";
+    cout << "dv0: " << std::stod(dv) << endl;
+    dv = "0.00001000";
+    cout << "dv1: " << std::stod(dv) << endl;
+    dv = "100000.00000000";
+    cout << "dv2: " << std::stod(dv) << endl;
+    dv = "0.00010000";
+    cout << "dv3: " << std::stod(dv) << endl;
+
+    // Initialize the buffer
+    char buffer[] = "Hello, World!";
+    std::cout << "Original: " << buffer << std::endl;
+
+    // Number of characters to remove from the start
+    size_t chars_to_remove = 7;
+
+    // Get the length of the string
+    size_t len = strlen(buffer);
+
+    if (chars_to_remove >= len) {
+        // If removing more characters than the string length, make it empty
+        buffer[0] = '\0';
+    } else {
+        // Use std::memmove to shift memory
+        std::memmove(buffer, buffer + chars_to_remove, len - chars_to_remove + 1);
+    }
+
+    std::cout << "Modified: " << buffer << std::endl;
+
     while(true) {
         cout << "Keep Running..." << endl;
         info_log("Main Process Keep Running...");
