@@ -66,10 +66,10 @@ int main(int argc, char const *argv[])
 {
     // sodium_init();
     
-    std::string ed25519_apikey = "rZWxygmGg1hKtJucV0KZEWJPPntjdVw8MzrQbIHND6h1DsjQu8tH0bZm1MOMbElg";
-    std::string ed25519_skey = "MC4CAQAwBQYDK2VwBCIEILX7KspJAjGF6BTFZCB/k70XhtAhZg8Rxz28lMOPhi4d";
+    std::string ed25519_apikey = "";
+    std::string ed25519_skey = "";
     
-    std::string payload = "apiKey=rZWxygmGg1hKtJucV0KZEWJPPntjdVw8MzrQbIHND6h1DsjQu8tH0bZm1MOMbElg&timestamp=1746605972672";
+    std::string payload = "apiKey=&timestamp=1746605972672";
 
     unsigned char* signed_skey = parse_private_key(ed25519_apikey, ed25519_skey);
     std::string signature = sign_payload_by_ed25519(signed_skey, payload);

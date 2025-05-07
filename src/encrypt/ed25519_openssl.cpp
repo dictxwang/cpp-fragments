@@ -32,18 +32,16 @@ static std::string base64_encode(const unsigned char* data, size_t len) {
 
 int main() {
 
-    std::string ed25519_apikey = "rZWxygmGg1hKtJucV0KZEWJPPntjdVw8MzrQbIHND6h1DsjQu8tH0bZm1MOMbElg";
-    std::string ed25519_skey = "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEILX7KspJAjGF6BTFZCB/k70XhtAhZg8Rxz28lMOPhi4d\n-----END PRIVATE KEY-----";
+    std::string ed25519_apikey = "";
+    std::string ed25519_skey = "-----BEGIN PRIVATE KEY-----\n\n-----END PRIVATE KEY-----";
     
     // Initialize OpenSSL error strings
     ERR_load_crypto_strings();
 
     // Message to be signed
-    const std::string payload = "apiKey=rZWxygmGg1hKtJucV0KZEWJPPntjdVw8MzrQbIHND6h1DsjQu8tH0bZm1MOMbElg&timestamp=1746605972672";
+    const std::string payload = "apiKey=&timestamp=1746605972672";
     std::cout << "Payload: " << payload << std::endl;
 
-    const std::string private_key_pem = R"(-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEIB3CR3P+P6Wk6x+0F5Y7tFJbJQ7nqFr9wvO3X4+6+fCo\n-----END PRIVATE KEY-----)";
-    
     // Create a BIO memory buffer from the PEM string
     BIO* bio = BIO_new_mem_buf(ed25519_skey.c_str(), -1);
     if (!bio) {
