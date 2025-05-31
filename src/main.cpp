@@ -3,6 +3,7 @@
 #include <chrono>
 #include "util/time.h"
 #include "util/log.h"
+#include "util/string_helper.h"
 #include "clazz/base.h"
 #include "clazz/sharp.h"
 #include "func/struct.h"
@@ -114,6 +115,9 @@ int main() {
     }
 
     std::cout << "Modified: " << buffer << std::endl;
+
+    std::cout << "Bool value for true: " << std::to_string(true) << std::endl;  // Ouput: 1
+    std::cout << "Bool toString for true: " << strHelper::toString(true) << std::endl;  // Ouput: 1
 
     while(true) {
         cout << "Keep Running..." << endl;

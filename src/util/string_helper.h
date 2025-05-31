@@ -19,6 +19,9 @@ public:
     template <typename T, typename S> 
     static const T valueOf(const S &a);
 
+    template <class T> inline
+    static std::string toString (const T& t);
+
 };
 
 template <typename TYPE> inline
@@ -70,5 +73,11 @@ const T strHelper::valueOf(const S& a)
     return t;
 }
 
+template <class T> inline
+std::string strHelper::toString (const T& t) {
+    std::stringstream ss;
+    ss << t;
+    return ss.str();
+}
 
 #endif /* _UTIL_STRING_HELPER_H_ */
