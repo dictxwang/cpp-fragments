@@ -9,6 +9,7 @@ set(PROCESS_HTTPS_CLIENT "process_https_client")
 set(PROCESS_EVENT_BASE "process_event_base")
 set(PROCESS_ED25519_SODIUM "process_ed25519_sodium")
 set(PROCESS_ED25519_OPENSSL "process_ed25519_openssl")
+set(PROCESS_SYNC "process_sync")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
@@ -114,4 +115,8 @@ target_link_libraries(${PROCESS_ED25519_SODIUM}
 add_executable(${PROCESS_ED25519_OPENSSL} "src/encrypt/ed25519_openssl.cpp")
 target_link_libraries(${PROCESS_ED25519_OPENSSL}
     PRIVATE OpenSSL::SSL OpenSSL::Crypto
+)
+
+add_executable(${PROCESS_SYNC} "src/sync/sync_base.cpp")
+target_link_libraries(${PROCESS_SYNC}
 )

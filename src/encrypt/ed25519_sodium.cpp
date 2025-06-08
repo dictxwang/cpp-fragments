@@ -2,6 +2,7 @@
 #include <sodium.h>
 #include <random>
 #include <iomanip>
+#include <cstring>
 
 static std::string base64_encode(const unsigned char* data, size_t len) {
     static const char* base64_chars =
