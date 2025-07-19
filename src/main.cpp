@@ -1,6 +1,8 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <cmath>
+#include <cstdint>
 #include "util/time.h"
 #include "util/log.h"
 #include "util/string_helper.h"
@@ -15,6 +17,28 @@
 
 using namespace std;
 using namespace rapidjson;
+
+double decimal_process(double value, int decimal) {
+    if (decimal == 0) {
+        return int(value);
+    } else {
+        int64_t pow = std::pow(10, decimal);
+        return double(int64_t(value * pow)) / double(pow);
+    }
+}
+
+int calculate_precision_by_min_step(double min_step) {
+    if (min_step >= 1) {
+        return 0;
+    } else {
+        int precision = 0;
+        do {
+            precision = precision + 1;
+            min_step = min_step * 10;
+        } while (min_step < 1);
+        return precision;
+    }
+}
 
 int main() {
     uint64_t now = TimestampInMillisec();
@@ -118,6 +142,21 @@ int main() {
 
     std::cout << "Bool value for true: " << std::to_string(true) << std::endl;  // Ouput: 1
     std::cout << "Bool toString for true: " << strHelper::toString(true) << std::endl;  // Ouput: 1
+
+    double pi = 3.14159261415926;
+    double pi_2 = decimal_process(pi, 0);
+    double pi_3 = decimal_process(pi, 5);
+    std::cout << std::setprecision(8) << "pi_2=" << pi_2 << ",pi_3=" << pi_3 <<std::endl;
+
+    int precision_1 = calculate_precision_by_min_step(1);
+    int precision_2 = calculate_precision_by_min_step(0.001);
+    std::cout << "precision_1=" << precision_1 << ",precision_2=" << precision_2 <<std::endl;
+
+    string message = fmt::format("hello {} is {} kg", "world", 12345);
+    std::cout << "<<<<<<<<<< message is " << message << std::endl;
+
+    string double_text = "9.33800000";
+    std::cout << "convert double text: " << std::stod(double_text) << std::endl;
 
     while(true) {
         cout << "Keep Running..." << endl;
