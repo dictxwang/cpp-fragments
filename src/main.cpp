@@ -158,6 +158,54 @@ int main() {
     string double_text = "9.33800000";
     std::cout << "convert double text: " << std::stod(double_text) << std::endl;
 
+    auto now_utc = std::chrono::system_clock::now();
+      // Convert to time_t for C-style functions
+    std::time_t now_c = std::chrono::system_clock::to_time_t(now_utc);
+    // Get UTC time structure
+    std::tm* utc_tm = std::gmtime(&now_c);
+    std::ostringstream oss;
+    oss << std::put_time(utc_tm, "%Y-%m-%d %H:%M:%S");
+    std::string utc_time_str = oss.str();
+    // Print formatted UTC time
+    std::cout << "UTC: " << utc_time_str << std::endl;
+
+    // get current time
+    auto format_now = std::chrono::system_clock::now();
+    // get number of milliseconds for the current second
+    // (remainder after division into seconds)
+    auto format_ms = std::chrono::duration_cast<std::chrono::milliseconds>(format_now.time_since_epoch()) % 1000;
+    // convert to std::time_t in order to convert to std::tm (broken time)
+    auto format_timer = std::chrono::system_clock::to_time_t(format_now);
+    // convert to broken time
+    std::tm format_bt = *std::localtime(&format_timer);
+    std::ostringstream format_oss;
+    format_oss << std::put_time(&format_bt, "%Y-%m-%dT%H:%M:%S"); // HH:MM:SS
+    format_oss << '.' << std::setfill('0') << std::setw(3) << format_ms.count() << "Z";
+    std::cout << "format current time: " << format_oss.str() << std::endl;
+    
+    // bool to str
+    std::stringstream bool_str;
+    bool_str << false;
+    std::cout << "bool str: " << bool_str.str() << std::endl; // 0
+
+    std::stringstream double_str;
+    double_str << 3.14159;
+    std::cout << "double str: " << double_str.str() << std::endl; // 0
+
+    uint64_t value_uint64 = 0;
+    std::cout << "value uint64: " << value_uint64 << std::endl;
+
+    // use complie definitions
+    #ifdef MAIN_PRIVATE_MACRO
+        std::cout << "use private macro defined in CMakeLists: " << MAIN_PRIVATE_MACRO << std::endl;
+    #endif
+    #ifdef MAIN_GLOBAL_MACRO_01
+        std::cout << "use global macro defined in CMakeLists: " << MAIN_GLOBAL_MACRO_01 << std::endl;
+    #endif
+    #ifdef ENABLE_DEBUG_LOG
+        std::cout << "<<<<< debug log opened." << std::endl;
+    #endif
+
     while(true) {
         cout << "Keep Running..." << endl;
         info_log("Main Process Keep Running...");

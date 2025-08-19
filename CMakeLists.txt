@@ -5,6 +5,7 @@ set(PROCESS_MAIN "process_main")
 set(PROCESS_TCP_SERVER "process_tcp_server")
 set(PROCESS_WS_CLIENT "process_ws_client")
 set(PROCESS_WSS_CLIENT "process_wss_client")
+set(PROCESS_WSS_CLIENT_OKX "process_wss_client_okx")
 set(PROCESS_HTTPS_CLIENT "process_https_client")
 set(PROCESS_EVENT_BASE "process_event_base")
 set(PROCESS_ED25519_SODIUM "process_ed25519_sodium")
@@ -15,6 +16,15 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
 # set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_BUILD_TYPE "Debug")
+
+add_compile_definitions(MAIN_GLOBAL_MACRO_01="global macro 01")
+
+option(USE_DEBUG_LOG "Use Debug Log" OFF)
+if (USE_DEBUG_LOG)
+    # cmake -DUSE_DEBUG_LOG=ON ..
+    add_compile_definitions(ENABLE_DEBUG_LOG)
+endif()
+
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(CUSTOM_LIB_DIR "/usr/lib/x86_64-linux-gnu")
@@ -74,6 +84,9 @@ FILE(GLOB_RECURSE LIB_CONFIG_SRC RELATIVE ${CMAKE_SOURCE_DIR}
 add_library(config ${LIB_CONFIG_SRC})
 
 add_executable(${PROCESS_MAIN} "src/main.cpp")
+target_compile_definitions(${PROCESS_MAIN}
+    PRIVATE MAIN_PRIVATE_MACRO
+)
 
 add_executable(${PROCESS_TCP_SERVER} "src/net/tcp_server.cpp")
 
@@ -88,6 +101,16 @@ add_executable(${PROCESS_WSS_CLIENT} "src/net/wss_client.cpp")
 target_include_directories(${PROCESS_WSS_CLIENT} PRIVATE ${OPENSSL_INCLUDE_DIR})
 # Link OpenSSL libraries
 target_link_libraries(${PROCESS_WSS_CLIENT}
+    PRIVATE OpenSSL::SSL OpenSSL::Crypto
+    util
+    config
+)
+
+add_executable(${PROCESS_WSS_CLIENT_OKX} "src/net/wss_client_okx.cpp")
+# Include OpenSSL headers
+target_include_directories(${PROCESS_WSS_CLIENT_OKX} PRIVATE ${OPENSSL_INCLUDE_DIR})
+# Link OpenSSL libraries
+target_link_libraries(${PROCESS_WSS_CLIENT_OKX}
     PRIVATE OpenSSL::SSL OpenSSL::Crypto
     util
     config

@@ -1,12 +1,18 @@
 #include <iostream>
 #include <curl/curl.h>
 #include "config/config.h"
+#include "util/string_helper.h"
 
 // Callback function to write received data into a string
-size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* userData) {
+size_t writeCallback(void* contents, size_t size, size_t nmemb, std::string* userData) {
     size_t totalSize = size * nmemb;
     userData->append(static_cast<char*>(contents), totalSize);
     return totalSize;
+}
+size_t headerCallback(char* buffer, size_t size, size_t nitems, void* userdata) {
+    std::string* header_string = static_cast<std::string*>(userdata);
+    header_string->append(buffer, size * nitems);
+    return size * nitems;
 }
 
 int main(int argc, char** argv) {
@@ -26,14 +32,18 @@ int main(int argc, char** argv) {
     CURLcode res;
 
     // The URL of the HTTPS backend
-    const std::string url = "https://api.binance.com/api/v3/exchangeInfo";
-    const std::string host = "api.binance.com";
+    // const std::string url = "https://api.binance.com/api/v3/exchangeInfo";
+    // const std::string host = "api.binance.com";
+    const std::string url = "https://baidu.com/";
+    const std::string host = "baidu.com";
     const std::string port = "443";
     const std::string localIP = config.binance_reset_local_ip; // Specify the local IP address or network interface here
     const std::string remoteIP = config.binance_reset_remote_ip; // Specify the remote IP address or network interface here
 
     // The response data will be stored here
     std::string responseData;
+    // The header data will be stored here
+    std::string headerData;
 
     // Initialize libcurl
     curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -57,10 +67,13 @@ int main(int argc, char** argv) {
         }
 
         // Set the callback function to handle response data
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
         // Pass the string to the callback function
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseData);
+        // Set the callback function to handle response data
+        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, headerCallback);
+        // Pass the string to the callback function
+        curl_easy_setopt(curl, CURLOPT_HEADERDATA, &headerData);
 
         // Enable SSL/TLS verification
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L); // Verify the server's certificate
@@ -74,6 +87,16 @@ int main(int argc, char** argv) {
             std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
         } else {
             std::cout << "Response Data: " << responseData << std::endl;
+            std::cout << "Header Data: " << headerData<< std::endl;
+            std::vector<std::string> headers;
+            strHelper::splitStr(headers, headerData, "\r\n");
+            for (std::string line : headers) {
+                std::vector<std::string> kv;
+                strHelper::splitStr(kv, line, ": ");
+                if (kv.size() == 2) {
+                    std::cout << "Header " << kv[0] << "->" << kv[1] << std::endl;
+                }
+            }
         }
 
         // Cleanup
