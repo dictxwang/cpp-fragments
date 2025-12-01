@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 #include <curl/curl.h>
 #include "config/config.h"
 #include "util/string_helper.h"
