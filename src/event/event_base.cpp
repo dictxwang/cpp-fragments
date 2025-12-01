@@ -6,6 +6,7 @@
 #include <queue>
 #include <mutex>
 #include <shared_mutex>
+#include <functional>
 
 // Signal handler callback
 void signal_cb(evutil_socket_t sig, short events, void *user_data) {
