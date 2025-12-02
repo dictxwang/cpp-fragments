@@ -8,6 +8,7 @@ set(PROCESS_WSS_CLIENT "process_wss_client")
 set(PROCESS_WSS_CLIENT_OKX "process_wss_client_okx")
 set(PROCESS_HTTPS_CLIENT "process_https_client")
 set(PROCESS_EVENT_BASE "process_event_base")
+set(PROCESS_EVENT_LOOP "process_event_loop")
 set(PROCESS_ED25519_SODIUM "process_ed25519_sodium")
 set(PROCESS_ED25519_OPENSSL "process_ed25519_openssl")
 set(PROCESS_SYNC "process_sync")
@@ -130,10 +131,14 @@ add_executable(${PROCESS_EVENT_BASE} "src/event/event_base.cpp")
 target_include_directories(${PROCESS_EVENT_BASE} PRIVATE ${LIBEVENT_INCLUDE_DIRS})
 target_link_libraries(${PROCESS_EVENT_BASE} PRIVATE ${LIBEVENT_LIBRARY})
 
-add_executable(${PROCESS_ED25519_SODIUM} "src/encrypt/ed25519_sodium.cpp")
-target_link_libraries(${PROCESS_ED25519_SODIUM}
-    PRIVATE Sodium
-)
+add_executable(${PROCESS_EVENT_LOOP} "src/event/event_loop.cpp")
+target_include_directories(${PROCESS_EVENT_LOOP} PRIVATE ${LIBEVENT_INCLUDE_DIRS})
+target_link_libraries(${PROCESS_EVENT_LOOP} PRIVATE ${LIBEVENT_LIBRARY})
+
+# add_executable(${PROCESS_ED25519_SODIUM} "src/encrypt/ed25519_sodium.cpp")
+# target_link_libraries(${PROCESS_ED25519_SODIUM}
+#     PRIVATE Sodium
+# )
 
 add_executable(${PROCESS_ED25519_OPENSSL} "src/encrypt/ed25519_openssl.cpp")
 target_link_libraries(${PROCESS_ED25519_OPENSSL}

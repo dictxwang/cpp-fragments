@@ -7,6 +7,8 @@
 #include <mutex>
 #include <shared_mutex>
 #include <functional>
+#include <vector>
+#include <unistd.h>
 
 // Signal handler callback
 void signal_cb(evutil_socket_t sig, short events, void *user_data) {
@@ -155,7 +157,7 @@ void user_event_base() {
     });
 
     // Run for 2 seconds
-    struct timeval tv = {2, 0};
+    struct timeval tv = {1, 0};
     event_base_loopexit(base, &tv);
     event_base_dispatch(base);
 
@@ -171,37 +173,67 @@ struct EvWorkItem {
 
 class EventLoopWorker {
     event_base* base;
-    event* work_event;
+    event* notify_event;
+    int notify_pipe[2];
     std::queue<EvWorkItem> work_queue;
     std::mutex queue_mutex;
 
-    static void work_callback(evutil_socket_t fd, short what, void *arg) {
-        std::cout << "004" << std::endl;
+    static void notify_cb(evutil_socket_t fd, short what, void* arg) {
         auto* worker = static_cast<EventLoopWorker*>(arg);
-        std::cout << "005" << std::endl;
+        char buf;
+        // Read from pipe to clear it
+        while (read(fd, &buf, 1) == 1) {}
+        
         worker->processWork();
     }
+
     public:
-      EventLoopWorker() {
+      EventLoopWorker() : notify_pipe{-1, -1}, notify_event(nullptr) {
           base = event_base_new();
-          work_event = evuser_new(base, work_callback, this);
-            //   event_add(work_event, nullptr);
-        if (work_event == nullptr || event_add(work_event, nullptr) < 0) {
-            std::cout << "Could not create/add SIGINT event.\n";
+          if (base == nullptr) {
+            std::cout << "Could not create event base.\n";
             return;
-        }
-        event_add(work_event, nullptr);
+          }
+          
+          // Create a pipe for thread-safe notification
+          if (pipe(notify_pipe) == -1) {
+              std::cout << "Could not create pipe.\n";
+              return;
+          }
+          
+          // Make pipe non-blocking
+          evutil_make_socket_nonblocking(notify_pipe[0]);
+          evutil_make_socket_nonblocking(notify_pipe[1]);
+          
+          // Create event for the read end of the pipe
+          notify_event = event_new(base, notify_pipe[0], EV_READ | EV_PERSIST, notify_cb, this);
+          event_add(notify_event, nullptr);
+      }
+      
+      ~EventLoopWorker() {
+          if (notify_event) {
+              event_free(notify_event);
+          }
+          if (notify_pipe[0] != -1) {
+              close(notify_pipe[0]);
+          }
+          if (notify_pipe[1] != -1) {
+              close(notify_pipe[1]);
+          }
+          if (base) {
+              event_base_free(base);
+          }
       }
       void submitWork(std::function<void()> task) {
         {
             std::lock_guard<std::mutex> lock(queue_mutex);
             work_queue.push({task});
         }
-        if (work_event == nullptr) {
-            std::cout << "Could not create/add SIGINT event.\n";
-            return;
+        // Write a byte to the pipe to wake up the event loop
+        char byte = 1;
+        if (write(notify_pipe[1], &byte, 1) != 1) {
+            std::cout << "Failed to notify worker thread" << std::endl;
         }
-        evuser_trigger(work_event);
       }
       void processWork() {
           std::vector<EvWorkItem> items;
@@ -212,7 +244,6 @@ class EventLoopWorker {
                   work_queue.pop();
               }
           }
-          std::cout << "005" << std::endl;
 
           for (auto& item : items) {
               item.task();
@@ -236,9 +267,15 @@ int main() {
     
     EventLoopWorker worker;
     std::thread worker_thread([&worker]() { worker.run(); });
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     worker.submitWork([]() { std::cout << "Task 1\n"; });
     worker.submitWork([]() { std::cout << "Task 2\n"; });
+
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    
+    worker.stop();
+    worker_thread.join();
+    
     return 0;
 }
