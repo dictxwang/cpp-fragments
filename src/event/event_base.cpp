@@ -211,18 +211,23 @@ class EventLoopWorker {
       }
       
       ~EventLoopWorker() {
+          std::cout << "001" << std::endl;
           if (notify_event) {
               event_free(notify_event);
           }
+          std::cout << "002" << std::endl;
           if (notify_pipe[0] != -1) {
               close(notify_pipe[0]);
           }
+          std::cout << "003" << std::endl;
           if (notify_pipe[1] != -1) {
               close(notify_pipe[1]);
           }
-          if (base) {
-              event_base_free(base);
-          }
+          std::cout << "004" << std::endl;
+        //   if (base) {
+        //       event_base_free(base);
+        //   }
+          std::cout << "005" << std::endl;
       }
       void submitWork(std::function<void()> task) {
         {
@@ -250,11 +255,14 @@ class EventLoopWorker {
           }
       }
       void run() {
+          std::cout << "before event dispatch" << std::endl;
           event_base_dispatch(base);
+          std::cout << "after event dispatch" << std::endl;
       }
 
       void stop() {
           event_base_loopbreak(base);
+          std::cout << "after loopbreak" << std::endl;
       }
 };
 
@@ -266,16 +274,22 @@ int main() {
     // user_event_base();
     
     EventLoopWorker worker;
-    std::thread worker_thread([&worker]() { worker.run(); });
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::thread worker_thread([&worker]() {
+        worker.run();
+        std::cout << "after event run" << std::endl;
+    });
+    worker_thread.detach();
+    // std::this_thread::sleep_for(std::chrono::seconds(1));
 
     worker.submitWork([]() { std::cout << "Task 1\n"; });
     worker.submitWork([]() { std::cout << "Task 2\n"; });
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    worker.submitWork([]() { std::cout << "Task 3\n"; });
 
     std::this_thread::sleep_for(std::chrono::seconds(2));
     
     worker.stop();
-    worker_thread.join();
     
+    std::this_thread::sleep_for(std::chrono::seconds(5));
     return 0;
 }

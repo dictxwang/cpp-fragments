@@ -12,6 +12,7 @@ set(PROCESS_EVENT_LOOP "process_event_loop")
 set(PROCESS_ED25519_SODIUM "process_ed25519_sodium")
 set(PROCESS_ED25519_OPENSSL "process_ed25519_openssl")
 set(PROCESS_SYNC "process_sync")
+set(PROCESS_LOCK "process_lock")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
@@ -147,4 +148,8 @@ target_link_libraries(${PROCESS_ED25519_OPENSSL}
 
 add_executable(${PROCESS_SYNC} "src/sync/sync_base.cpp")
 target_link_libraries(${PROCESS_SYNC}
+)
+
+add_executable(${PROCESS_LOCK} "src/lock/lock_base.cpp")
+target_link_libraries(${PROCESS_LOCK}
 )

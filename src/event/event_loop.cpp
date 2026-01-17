@@ -22,19 +22,23 @@ class EventLoopWorker {
 
     static void work_callback(evutil_socket_t fd, short what, void* arg) {
         auto* worker = static_cast<EventLoopWorker*>(arg);
+        std::cout << "at callback" << std::endl;
         worker->processWork();
     }
 
-public:
+    public:
     EventLoopWorker() {
         base = event_base_new();
         work_event = evuser_new(base, work_callback, this);
         event_add(work_event, nullptr);
     }
     ~EventLoopWorker() {
-          if (base) {
-              event_base_free(base);
-          }
+        if (work_event) {
+            event_free(work_event);
+        }
+        if (base) {
+            event_base_free(base);
+        }
       }
 
     void submitWork(std::function<void()> task) {
@@ -61,7 +65,8 @@ public:
     }
 
     void run() {
-        event_base_dispatch(base);
+        int ret = event_base_dispatch(base);
+        std::cout << "dispatch return " << ret << std::endl;
     }
 
     void stop() {
@@ -72,8 +77,11 @@ public:
 int main() {
     // Usage
     EventLoopWorker worker;
-    std::thread worker_thread([&worker]() { worker.run(); });
 
+    worker.submitWork([]() { std::cout << "Task 0\n"; });
+    std::thread worker_thread([&worker]() { worker.run();});
+    
+    std::this_thread::sleep_for(std::chrono::seconds(1));
     worker.submitWork([]() { std::cout << "Task 1\n"; });
     worker.submitWork([]() { std::cout << "Task 2\n"; });
 
